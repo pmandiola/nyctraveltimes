@@ -76,7 +76,7 @@ function drawMap(geoJson, zipcode) {
     let maxTime = d3.max(geoJson.features,
         d => d.properties.max)
     let cScale = d3.scaleLinear()
-        .domain([0, 30, maxTime])
+        .domain([0, 40, maxTime])
         .range(["green", "yellow", "red"])
 
     container.selectAll("path").data(geoJson.features)
@@ -95,6 +95,7 @@ function drawMap(geoJson, zipcode) {
         })
 
     container.selectAll("path")
+        .transition()
         .attr("fill",
             d => zipcode ? cScale(d.properties[zipcode]):
           "grey")
