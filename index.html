@@ -1,0 +1,107 @@
+<html>
+
+<head>
+<style>
+    body {
+        font-family: Helvetica, Arial, sans-serif
+    }
+
+    h1 {
+        background-color: #2a5599;
+        color: #FFFFFF;
+        padding: 5px;
+    }
+
+    svg {
+      border: solid 1px #000000;
+    }
+
+    .mainView {
+      display: flex;
+    }
+</style>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+</head>
+
+<body>
+<h1>NYC Public Transit travel times</h1>
+<div class="mainView">
+    <div>
+        <svg id="Map"></svg>
+    </div>
+</div>
+</body>
+
+<script>
+
+let store = {}
+
+function loadData() {
+    let promise = d3.json("nyc_traveltimes.geojson")
+    return promise.then(data => {
+        store.geoJSON = data
+        return store;
+    })
+}
+
+function getMapConfig(){
+  let width = 600;
+  let height = 600;
+  let container = d3.select('#Map')
+  container
+      .attr("width", width)
+      .attr("height", height)
+  return {width, height, container}
+}
+
+function getMapProjection(config) {
+  let {width, height} = config;
+  let projection = d3.geoMercator()
+  projection.scale(50000)
+            .center([-73.94, 40.70])
+            .translate([width / 2 + 20, height / 2])
+
+  store.mapProjection = projection;
+  return projection;
+}
+
+function drawMap(geoJson, zipcode) {
+    let config = getMapConfig();
+    let projection = getMapProjection(config)
+    let container = config.container
+
+    let path = d3.geoPath()
+        .projection(projection)
+
+    let maxTime = d3.max(geoJson.features,
+        d => d.properties.max)
+    let cScale = d3.scaleLinear()
+        .domain([0, 30, maxTime])
+        .range(["green", "yellow", "red"])
+
+    container.selectAll("path").data(geoJson.features)
+        .enter().append("path")
+        .attr("d", d => path(d))
+        .attr("stroke", "#ccc")
+        .on("click", function(d) {
+          drawMap(store.geoJSON, d.properties.ZIPCODE)
+        })
+
+    container.selectAll("path")
+        .attr("fill",
+            d => zipcode ? cScale(d.properties[zipcode]):
+          "#eee")
+
+    console.log("ZIPCODE: " + zipcode)
+}
+
+function showData() {
+
+  drawMap(store.geoJSON)
+}
+
+loadData().then(showData);
+
+</script>
+
+</html>
